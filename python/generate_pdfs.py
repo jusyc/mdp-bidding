@@ -1,4 +1,3 @@
-
 # Generating probability distribution functions for click through rate and market price
 # Code based off of CMDP paper code
 
@@ -14,8 +13,8 @@ def makeBins():
     pctr_init = np.append(pctr_init, pctr_bins[:-1])
   pctr_bins2 = np.linspace(0.1, 1, num=10)
   pctr_bins = np.append(pctr_init, pctr_bins2)
-  nbins = len(pctr_bins)-1
-  return pctr_bins, nbins
+
+  return pctr_bins
 
 def get_pctr_pdf(pctr, bins):
   freq, __ = np.histogram(pctr, bins)
@@ -23,10 +22,12 @@ def get_pctr_pdf(pctr, bins):
 
   return pctr_pdf
 
-def get_m_pdf(prices, pctr, pctr_pdf):
+def get_m_pdf(prices, pctr, pctr_pdf, pctr_bins):
   price_bins = [i for i in range(max_bid+2)]
   freq, __ = np.histogram(prices, price_bins)
   m_pdf = freq/(np.sum(freq)) #Add laplace smoothing??
+
+  nbins = len(pctr_bins) - 1
 
   joint_pdf, __, __ = np.histogram2d(pctr, prices, bins=[pctr_bins, price_bins])
   joint_pdf = joint_pdf/(np.sum(joint_pdf, axis=None))
@@ -52,8 +53,8 @@ if __name__ == "__main__":
   pctr = np.load(dataPath + "pCTR.npy")
   prices = np.load(dataPath + "prices.npy")
 
-  pctr_bins, nbins = makeBins()
+  pctr_bins = makeBins()
 
   pctr_pdf = get_pctr_pdf(pctr, pctr_bins)
 
-  m_pdf = get_m_pdf(prices, pctr, pctr_pdf)
+  m_pdf = get_m_pdf(prices, pctr, pctr_pdf, pctr_bins)
