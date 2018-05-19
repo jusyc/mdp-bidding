@@ -6,9 +6,12 @@ import math
 
 def basicFeatureExtractor(state, action):
   i, n, b, ad, pctr, imps, cost = state
-  features = [] #list of (key, value) pairs
-  features.append( ( ("avg budget", math.floor(b/(10*n) * 10)), 1) )
-  features.append( (("pctr", round(pctr, 2)), 1) )
+  features = [("pctr-big", pctr > .5)] #list of (key, value) pairs
+  features = [("pctr-small", pctr <= .5)] #list of (key, value) pairs
+  #features.append( (("budget", math.floor(b/100)*100), 1) )
+  #features.append(  (("impressions-left", math.floor(n/100)*100), 1)   )
+  #features.append( (("pctr-small", pctr < 0.1 and pctr > 0.0), 1) )
+  #features.append( (("pctr-big", pctr >= 0.1), 1) )
   return features
 
 def main():

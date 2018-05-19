@@ -245,4 +245,5 @@ class QLearningAlgorithm(RLAlgorithm):
             # print(Vopt)
             # print(feature)
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
+            # print key, ":", self.weights[key]
         # END_YOUR_CODE
