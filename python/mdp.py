@@ -1,99 +1,39 @@
-# Given a policy, run the MDP on the policy over a given ad campaign
-# Code based off of CMDP paper code
-
+import util
 import numpy as np
-from config import *
-from generate_pdfs import *
 
-def run(auction, N, policy, budget, pctr_pdf, pctr_bins, m_pdf, bid_log, logging=False, verbose=False):
-  log = "{:>8}\t{:>10}\t{:>8}\t{:>8}\t{:>10}\t{:>10}\n".format("i","bid_price", "win_price", "click", "budget", "cost")
-  if logging:
-    bid_log.append(log)
-  if verbose:
-    print(log)
+class BiddingMDP(util.MDP):
+  def __init__(self, N, B, ads, prices, clicks, pctrs, maxBidPrice):
+    self.N = N
+    self.B = B
+    self.ads = ads
+    self.prices = prices
+    self.clicks = clicks
+    self.pctrs = pctrs
+    self.maxBidPrice = 300
 
-  b = B
-  nImps = 0
-  nClicks = 0
-  cost = 0
+  def startState(self):
+    #STATE = (#bids so far, #bids remaining, budget remaining, ad features, pctr, #impressions, amount spent)
+    return (0, self.N, self.B, self.ads[0], self.pctrs[0], 0, 0)
 
-  for i in range(N):
-    price = auction["prices"][i]
-    click = auction["clicks"][i]
-    pctr = auction["pctr"][i]
-    index = np.digitize(pctr, pctr_bins) - 1
-    a = max(0, min(b, policy[index]))
+  def actions(self, state):
+    # n, b, ad, pctr, imps, clicks, cost = state
+    return [x for x in range(maxBidPrice+1) if x <= self.maxBidPrice]
 
-    if a >= price:
-        b -= price #decrement budget
-        nImps += 1 #won 1 impression
-        nClicks += click #won 0 or 1 clicks
-        cost += price #increment cost
+  def succAndProbReward(self, state, action):
+    i, n, b, ad, pctr, imps, cost = state
 
-    log = "{:>8}\t{:>10}\t{:>8}\t{:>8}\t{:>10}\t{:>10}\n".format(i, a, price, nClicks, b, cost)
-    if logging:
-      bid_log.append(log)
-    if verbose:
-      print(log)
+    if n == 0:
+      return []
 
-  return nImps, nClicks, cost
+    click = self.clicks[i]
+    winprice = self.clicks[i]
 
-def medianMarketPricePolicy(m_pdf):
-  m, n = m_pdf.shape
-  policy = np.zeros((m,))
-  for i in range(m):
-    cumScore = 0
-    for j in range(n):
-      cumScore += m_pdf[i, j]
-      if cumScore >= 0.5:
-        policy[i] = j
-        break
+    if action >= winprice:
+      newState = (i+1, n-1, b-winprice, ads[i+1], pctrs[i+1], imps+1, cost+winprice)
+      return[(newState, 1., click)]
+    else:
+      newState = (i+1, n-1, b, ads[i+1], pctrs[i+1], imps, clicks, cost)
+      return[(newState, 1., 0)]
 
-  return policy
-
-
-def calculateBudget(c0, N):
-  #load from somewhere else!
-  prices_train = np.load(outPath + camp + "/train/prices.npy")
-  m_mean = np.mean(prices_train, axis=None)
-  B = m_mean * c0 * N
-
-  return int(B)
-
-if __name__ == '__main__':
-  camp = campaigns[0]
-  dataPath = outPath + camp + "/test/"
-
-  auction = {}
-  auction["pctr"] = np.load(dataPath + "pCTR.npy")
-  auction["prices"] = np.load(dataPath + "prices.npy")
-  auction["clicks"] = np.load(dataPath + "clicks.npy")
-
-  #calculating distributions of CTR and market price
-  bins = makeBins()
-  pctr_pdf = get_pctr_pdf(auction["pctr"], bins)
-  m_pdf = get_m_pdf(auction["prices"], auction["pctr"], pctr_pdf, bins)
-
-  #create baseline policy
-  policy_name = "baseline"
-  baseline = medianMarketPricePolicy(m_pdf)
-
-  #calulating budget
-  c0_list = ["32", "16", "8", "4"]
-  for c0_str in c0_list:
-    c0 = 1/float(c0_str)
-    N = len(auction["clicks"])
-    B = calculateBudget(c0, N)
-
-    #setting up loggins
-    logging = False
-    bid_log = []
-
-    #test baseline policy
-    run(auction, N=N, policy=baseline, budget=B, pctr_pdf=pctr_pdf, pctr_bins=bins, m_pdf=m_pdf,
-        bid_log=bid_log, logging=logging, verbose=False)
-
-    if logging:
-      with open(logPath + camp + "/" + policy_name + "/" + c0_str + ".txt", "w") as f:
-        for line in bid_log:
-          f.write("{}\n".format(line))
+  def discount(self):
+    return 1
