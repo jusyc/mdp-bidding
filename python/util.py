@@ -1,4 +1,5 @@
 import collections, random
+import math
 
 ############################################################
 
@@ -181,7 +182,8 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
             totalDiscount *= mdp.discount()
             state = newState
         if verbose:
-            print "Trial %d (totalReward = %s): %s" % (trial, totalReward, sequence)
+            print trial, totalReward
+            # print "Trial %d (totalReward = %s): %s" % (trial, totalReward, sequence)
         totalRewards.append(totalReward)
     return totalRewards
 
@@ -191,13 +193,13 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
 # featureExtractor: a function that takes a state and action and returns a list of (feature name, feature value) pairs.
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
-class QLearningAlgorithm(util.RLAlgorithm):
+class QLearningAlgorithm(RLAlgorithm):
     def __init__(self, actions, discount, featureExtractor, explorationProb=0.2):
         self.actions = actions
         self.discount = discount
         self.featureExtractor = featureExtractor
         self.explorationProb = explorationProb
-        self.weights = defaultdict(float)
+        self.weights = collections.defaultdict(float)
         self.numIters = 0
 
     # Return the Q function associated with the weights and features
@@ -235,5 +237,12 @@ class QLearningAlgorithm(util.RLAlgorithm):
             return
 
         for key, feature in self.featureExtractor(state, action):
+            # print(self.weights[key])
+            # print(self.getStepSize())
+            # print(Qopt)
+            # print(reward)
+            # print(self.discount)
+            # print(Vopt)
+            # print(feature)
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
         # END_YOUR_CODE

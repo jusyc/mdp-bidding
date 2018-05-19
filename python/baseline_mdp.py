@@ -12,7 +12,7 @@ def run(auction, N, policy, budget, pctr_pdf, pctr_bins, bid_log, logging=False,
   if verbose:
     print(log)
 
-  b = B #???
+  b = budget #???
   nImps = 0
   nClicks = 0
   cost = 0

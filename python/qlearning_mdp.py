@@ -15,8 +15,6 @@ if __name__ == '__main__':
   auction["prices"] = np.load(dataPath + "prices.npy")
   auction["clicks"] = np.load(dataPath + "clicks.npy")
 
-  ) 
-
   #calculating distributions of CTR and market price
   bins = makeBins()
   pctr_pdf = get_pctr_pdf(auction["pctr"], bins)
@@ -40,7 +38,7 @@ if __name__ == '__main__':
     bid_log = []
 
     #make MDP
-    mdp = BiddingMDP(N=N, B=)  
+    mdp = BiddingMDP(N=N, B=)
 
     #test baseline policy
     run(auction, N=N, policy=baseline, budget=B, pctr_pdf=pctr_pdf, pctr_bins=bins,
