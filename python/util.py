@@ -236,6 +236,8 @@ class QLearningAlgorithm(RLAlgorithm):
         else:
             return
 
+        i, n, b, ad, pctr, imps, cost = state
+
         for key, feature in self.featureExtractor(state, action):
             # print(self.weights[key])
             # print(self.getStepSize())
@@ -245,5 +247,6 @@ class QLearningAlgorithm(RLAlgorithm):
             # print(Vopt)
             # print(feature)
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
-            # print key, ":", self.weights[key]
+            if i % 100000 == 0:
+                print key, ":", self.weights[key]
         # END_YOUR_CODE
