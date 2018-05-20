@@ -24,26 +24,32 @@ class BiddingMDP(MDP):
   def succAndProbReward(self, state, action):
     i, n, b, ad, pctr, imps, cost = state
 
-    if (n == 1) or (b == 0): # Reached end state
+    if (n == 1): # Reached end state    ...  or (b == 0)
       return []
 
     click = self.clicks[i]
     winprice = self.prices[i]
 
+    # if click:
+    #   print "action:", action
+    #   print "price: ", winprice
+    #   print
+
     if action >= winprice: # Won last auction
       # if click != 0:
         # print i, ":", click
       newState = (i+1, n-1, b-winprice, self.ads[i+1], self.pctrs[i+1], imps+1, cost+winprice)
-      return[(newState, 1., click)]
+      reward = click - winprice/float(self.B)
+      return[(newState, 1., reward)]
     else: # Lost last auction
       newState = (i+1, n-1, b, self.ads[i+1], self.pctrs[i+1], imps, cost)
-      return[(newState, 1., 0)]
+      reward = -click
+      return[(newState, 1., reward)]
 
   def discount(self):
     return 1.0
 
-def makeMDP(campaignNum, B, N=-1, maxBidPrice=300):
-  camp = campaigns[campaignNum]
+def makeMDP(camp, B, N=-1, maxBidPrice=300):
   dataPath = outPath + camp + "/test/"
 
   pctr = np.load(dataPath + "pCTR.npy")

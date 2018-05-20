@@ -9,11 +9,11 @@ def basicFeatureExtractor(state, action):
   features = []
   budget = math.floor(b/1000)*1000
   num = math.floor(n/1000)*1000
-  features.append((action, 1))
-  features.append((round(pctr, 2), 1))
+  # features.append((action, 1))
+  # features.append((round(pctr, 2), 1))
   features.append((("action-pctr", action, round(pctr, 2)), 1) )
-  features.append((("action-budget", action, budget), 1) )
-  features.append((("action-num", action, num), 1) )
+  # features.append((("action-budget", action, budget), 1) )
+  # features.append((("action-num", action, num), 1) )
   features.append((("budget-num", budget, num), 1) )
   #features.append(("pctr-big", pctr > .5)) #list of (key, value) pairs
   #features.append(("pctr-small", pctr <= .5)) #list of (key, value) pairs
@@ -25,10 +25,12 @@ def basicFeatureExtractor(state, action):
   return features
 
 def main():
-  mdp  = makeMDP(campaignNum=0, B=1323253)
-  explorationProb = 0.2
+  camp = campaigns[0]
+  resultPath = logPath + str(camp) + "/qlearning/v0-rewards.txt"
+  mdp  = makeMDP(camp=camp, B=1323253) #1323253
+  explorationProb = 0.4
   qLearner = QLearningAlgorithm(mdp.actions, mdp.discount(), basicFeatureExtractor, explorationProb)
-  simulate(mdp, qLearner, numTrials=1000, maxIterations=1000000, verbose=True, sort=False)
+  simulate(mdp, qLearner, numTrials=1000, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath)
 
 if __name__ == '__main__':
   main()

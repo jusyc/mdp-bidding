@@ -146,7 +146,7 @@ class FixedRLAlgorithm(RLAlgorithm):
 # Each trial will run for at most |maxIterations|.
 # Return the list of rewards that we get for each trial.
 def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
-             sort=False):
+             sort=False, resultPath=None):
     # Return i in [0, ..., len(probs)-1] with probability probs[i].
     def sample(probs):
         target = random.random()
@@ -157,6 +157,13 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
         raise Exception("Invalid probs: %s" % probs)
 
     totalRewards = []  # The rewards we get on each trial
+
+    if resultPath:
+        print "Writing to ", resultPath
+        f = open(resultPath, "w")
+        print("Trial " + " Reward " + " #Clicks")
+        f.write("Trial " + " Reward " + " #Clicks\n")
+
     for trial in range(numTrials):
         state = mdp.startState()
         sequence = [state]
@@ -181,10 +188,18 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
             totalReward += totalDiscount * reward
             totalDiscount *= mdp.discount()
             state = newState
+
+        numClicks = 515 - (515 - (totalReward+1))/2
+        output = str(trial) + "  " + str(totalReward) + "  " + str(numClicks) + "\n"
+        if resultPath:
+            f.write(output)
         if verbose:
-            print trial, totalReward
             # print "Trial %d (totalReward = %s): %s" % (trial, totalReward, sequence)
+            print output
         totalRewards.append(totalReward)
+
+    if resultPath:
+        close(f)
     return totalRewards
 
 # Performs Q-learning.  Read util.RLAlgorithm for more information.
@@ -247,6 +262,6 @@ class QLearningAlgorithm(RLAlgorithm):
             # print(Vopt)
             # print(feature)
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
-            if i % 100000 == 0:
-                print key, ":", self.weights[key]
+            # if i % 100000 == 0:
+            #     print key, ":", self.weights[key]
         # END_YOUR_CODE
