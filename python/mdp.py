@@ -22,13 +22,13 @@ class BiddingMDP(MDP):
     if b < 300:
       return [0]
 
-    return [0, 300]
+    return [0, self.maxBidPrice]
     #return [x for x in range(0, min(self.maxBidPrice, b) + 1, 10)]
 
   def succAndProbReward(self, state, action):
     i, n, b, ad, pctr, imps, cost = state
 
-    if (n == 1): # Reached end state    ...  or (b == 0)
+    if (n == 1) or (b < self.maxBidPrice): # Reached end state    ...  or (b == 0)
       return []
 
     click = self.clicks[i]
@@ -39,13 +39,13 @@ class BiddingMDP(MDP):
     #   print "price: ", winprice
     #   print "pctr:  ", pctr
     #   print "budget:", b
-    #   print
+    #   print "iters: ", n
 
     if action >= winprice: # Won last auction
       # if click != 0:
         # print i, ":", click
       newState = (i+1, n-1, b-winprice, self.ads[i+1], self.pctrs[i+1], imps+1, cost+winprice)
-      reward = click - 200 * winprice/float(self.B)
+      reward = click - 100 * winprice/float(self.B)
       return[(newState, 1., reward)]
     else: # Lost last auction
       newState = (i+1, n-1, b, self.ads[i+1], self.pctrs[i+1], imps, cost)

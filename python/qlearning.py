@@ -4,6 +4,13 @@ from mdp import *
 import numpy as np
 import math
 
+def getPctrBucket(pctr, numBuckets):
+  if pctr == 0:
+    return numBuckets
+  pwr2 = min(math.log(pctr)/math.log(1./2), numBuckets)
+  string = "1/2^" + str(pwr2)
+  return string
+
 def basicFeatureExtractor(state, action):
   i, n, b, ad, pctr, imps, cost = state
   features = []
@@ -12,7 +19,7 @@ def basicFeatureExtractor(state, action):
   # features.append((action, 1))
   # features.append((round(pctr, 2), 1))
   # features.append((("action-pctr", action, round(pctr, 1)), 1) )
-  features.append((("action-pctr-budget", action, round(pctr, 1), budget), 1))
+  features.append((("action-pctr-budget", action, getPctrBucket(pctr, 10), budget), 1))
   # features.append((("action-budget", action, budget), 1) )
   # features.append((("action-num", action, num), 1) )
   # features.append((("budget-num", budget, num), 1) )
@@ -29,7 +36,7 @@ def main():
   camp = campaigns[0]
   resultPath = logPath + str(camp) + "/qlearning/v0-rewards.txt"
   mdp  = makeMDP(camp=camp, B=1323253) #1323253
-  explorationProb = 0.1
+  explorationProb = 0.01
   qLearner = QLearningAlgorithm(mdp.actions, mdp.discount(), basicFeatureExtractor, explorationProb)
   simulate(mdp, qLearner, numTrials=1000, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath)
 
