@@ -170,6 +170,7 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
         sequence = [state]
         totalDiscount = 1
         totalReward = 0
+        totalClicks = 0
         for _ in range(maxIterations):
             action = rl.getAction(state)
             transitions = mdp.succAndProbReward(state, action)
@@ -186,12 +187,13 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
             sequence.append(newState)
 
             rl.incorporateFeedback(state, action, reward, newState)
+            if reward > 0:
+                totalClicks += 1
             totalReward += totalDiscount * reward
             totalDiscount *= mdp.discount()
             state = newState
 
-        numClicks = 515 - (515 - (totalReward+1))/2
-        output = str(trial) + "  " + str(totalReward) + "  " + str(numClicks) + "\n"
+        output = str(trial) + "  " + str(totalReward) + "  " + str(totalClicks) + "\n"
         if resultPath:
             f.write(output)
         if verbose:
@@ -254,6 +256,9 @@ class QLearningAlgorithm(RLAlgorithm):
 
         i, n, b, ad, pctr, imps, cost = state
 
+        # if i % 100000 == 0 or reward == 1:
+        #     print reward
+
         for key, feature in self.featureExtractor(state, action):
             # print(self.weights[key])
             # print(self.getStepSize())
@@ -263,6 +268,11 @@ class QLearningAlgorithm(RLAlgorithm):
             # print(Vopt)
             # print(feature)
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
-            # if i % 100000 == 0:
+            # if i % 100000 == 0 or reward == 1:
             #     print key, ":", self.weights[key]
+
+        # if i % 100000 == 0 or reward == 1:
+        #     print
+            # if i % 100000 == 0:
+                # print key, ":", self.weights[key]
         # END_YOUR_CODE
