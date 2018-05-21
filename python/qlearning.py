@@ -14,7 +14,7 @@ def basicFeatureExtractor(state, action):
   features.append((("action-pctr", action, round(pctr, 2)), 1) )
   # features.append((("action-budget", action, budget), 1) )
   # features.append((("action-num", action, num), 1) )
-  features.append((("budget-num", budget, num), 1) )
+  # features.append((("budget-num", budget, num), 1) )
   #features.append(("pctr-big", pctr > .5)) #list of (key, value) pairs
   #features.append(("pctr-small", pctr <= .5)) #list of (key, value) pairs
   #features.append(("action = " + action, 1))

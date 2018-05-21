@@ -38,6 +38,7 @@ class ValueIteration(MDPAlgorithm):
         V = collections.defaultdict(float)  # state -> value of state
         numIters = 0
         while True:
+            print(numIters)
             newV = {}
             for state in mdp.states:
                 # This evaluates to zero for end states, which have no available actions (by definition)
