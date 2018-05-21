@@ -202,7 +202,7 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
         totalRewards.append(totalReward)
 
     if resultPath:
-        close(f)
+        f.close()
     return totalRewards
 
 # Performs Q-learning.  Read util.RLAlgorithm for more information.

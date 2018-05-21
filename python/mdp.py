@@ -45,7 +45,7 @@ class BiddingMDP(MDP):
       # if click != 0:
         # print i, ":", click
       newState = (i+1, n-1, b-winprice, self.ads[i+1], self.pctrs[i+1], imps+1, cost+winprice)
-      reward = click - 100 * winprice/float(self.B)
+      reward = click - 200 * winprice/float(self.B)
       return[(newState, 1., reward)]
     else: # Lost last auction
       newState = (i+1, n-1, b, self.ads[i+1], self.pctrs[i+1], imps, cost)
