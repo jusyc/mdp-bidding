@@ -53,7 +53,6 @@ def medianMarketPricePolicy(m_pdf):
 
 
 def calculateBudget(c0, N):
-  #load from somewhere else!
   prices_train = np.load(outPath + camp + "/train/prices.npy")
   m_mean = np.mean(prices_train, axis=None)
   B = m_mean * c0 * N

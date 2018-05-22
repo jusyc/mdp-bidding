@@ -55,7 +55,18 @@ class BiddingMDP(MDP):
   def discount(self):
     return 1.0
 
-def makeMDP(camp, B, N=-1, maxBidPrice=300):
+  def getN(self):
+    return self.N
+
+def calculateBudget(c0, N, camp):
+  #load from somewhere else!
+  prices_train = np.load(outPath + camp + "/train/prices.npy")
+  m_mean = np.mean(prices_train, axis=None)
+  B = m_mean * c0 * N
+
+  return int(B)
+
+def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32):
   dataPath = outPath + camp + "/test/"
 
   pctr = np.load(dataPath + "pCTR.npy")
@@ -66,14 +77,17 @@ def makeMDP(camp, B, N=-1, maxBidPrice=300):
   if N < 0:
     N = len(clicks)
 
+  if B < 0:
+    B = calculateBudget(c0, N, camp)
+
+  print "N:", N
+  print "B:", B
+  print "nClicks:", np.sum(clicks)
   #make MDP
   mdp = BiddingMDP(N=N, B=B, ads=ads, prices=prices, clicks=clicks, \
                   pctrs=pctr, maxBidPrice=maxBidPrice)
 
   return mdp
-
-
-
 
 
 
