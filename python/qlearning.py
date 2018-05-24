@@ -33,7 +33,7 @@ def basicFeatureExtractor(state, action):
   return features
 
 def main():
-  camp = campaigns[1]
+  camp = campaigns[8]
   resultPath = logPath + str(camp) + "/qlearning/v0-rewards.txt"
   mdp = makeMDP(camp=camp, c0=1./32) #1323253
   explorationProb = 0.01
