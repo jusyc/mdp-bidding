@@ -12,7 +12,7 @@ def run(auction, N, policy, budget, pctr_pdf, pctr_bins, bid_log, logging=False,
   if verbose:
     print(log)
 
-  b = budget #???
+  b = budget
   nImps = 0
   nClicks = 0
   cost = 0
@@ -52,15 +52,16 @@ def medianMarketPricePolicy(m_pdf):
   return policy
 
 
-def calculateBudget(c0, N):
+def calculateBudget(c0, N, camp):
   prices_train = np.load(outPath + camp + "/train/prices.npy")
   m_mean = np.mean(prices_train, axis=None)
   B = m_mean * c0 * N
 
   return int(B)
 
-if __name__ == '__main__':
-  camp = campaigns[0]
+def main(campNum):
+  camp = campaigns[campNum]
+  print(camp)
   dataPath = outPath + camp + "/test/"
 
   auction = {}
@@ -81,11 +82,11 @@ if __name__ == '__main__':
   logging = True
 
   #calulating budget
-  c0_list = ["32", "16", "8", "4"]
+  c0_list = ["32"]#, "16", "8", "4"]
   for c0_str in c0_list:
     c0 = 1/float(c0_str)
     N = len(auction["clicks"])
-    B = calculateBudget(c0, N)
+    B = calculateBudget(c0, N, camp)
 
     #setting up logging
     bid_log = []
@@ -98,3 +99,7 @@ if __name__ == '__main__':
       with open(logPath + camp + "/" + policy_name + "/" + c0_str + ".txt", "w") as f:
         for line in bid_log:
           f.write("{}\n".format(line))
+
+if __name__ == '__main__':
+  for i in range(9):
+    main(i)
