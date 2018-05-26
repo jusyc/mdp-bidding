@@ -12,14 +12,14 @@ def getPctrBucket(pctr, numBuckets):
   return string
 
 def basicFeatureExtractor(state, action):
-  i, n, b, ad, pctr, imps, cost = state
+  i, n, b, pctr, imps, cost = state
   features = []
   budget = math.floor(b/100000)*100000
   num = math.floor(n/1000)*1000
   # features.append((action, 1))
   # features.append((round(pctr, 2), 1))
-  # features.append((("action-pctr", action, round(pctr, 1)), 1) )
-  features.append((("action-pctr-budget", action, getPctrBucket(pctr, 10), budget), 1))
+  features.append((("action-pctr", action, getPctrBucket(pctr, 10)), 1) )
+  # features.append((("action-pctr-budget", action, getPctrBucket(pctr, 10), budget), 1))
   # features.append((("action-budget", action, budget), 1) )
   # features.append((("action-num", action, num), 1) )
   # features.append((("budget-num", budget, num), 1) )
@@ -33,12 +33,12 @@ def basicFeatureExtractor(state, action):
   return features
 
 def main():
-  camp = campaigns[0]
+  camp = campaigns[4]
   resultPath = logPath + str(camp) + "/qlearning/v0-rewards.txt"
-  mdp = makeMDP(camp=camp, c0=1./8) #1323253
+  mdp = makeMDP(camp=camp, c0=1./32) #1323253
   explorationProb = 0.01
   qLearner = QLearningAlgorithm(mdp.actions, mdp.discount(), basicFeatureExtractor, explorationProb)
-  simulate(mdp, qLearner, numTrials=1000, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath)
+  simulate(mdp, qLearner, numTrials=1000, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath, calculateLoss=False)
 
 if __name__ == '__main__':
   main()

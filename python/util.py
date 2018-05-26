@@ -147,7 +147,7 @@ class FixedRLAlgorithm(RLAlgorithm):
 # Each trial will run for at most |maxIterations|.
 # Return the list of rewards that we get for each trial.
 def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
-             sort=False, resultPath=None):
+             sort=False, resultPath=None, calculateLoss=False):
     # Return i in [0, ..., len(probs)-1] with probability probs[i].
     def sample(probs):
         target = random.random()
@@ -162,8 +162,12 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
     if resultPath:
         print "Writing to ", resultPath
         f = open(resultPath, "w")
-        print("Trial " + " Reward " + " #Clicks")
-        f.write("Trial " + " Reward " + " #Clicks\n")
+        if calculateLoss:
+            print("Trial " + " Reward " + " #Clicks" + " AvgLoss")
+            f.write("Trial " + " Reward " + " #Clicks" + "AvgLoss\n")
+        else:
+            print("Trial " + " Reward " + " #Clicks")
+            f.write("Trial " + " Reward " + " #Clicks\n")
 
     for trial in range(numTrials):
         state = mdp.startState()
@@ -193,17 +197,40 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
             totalDiscount *= mdp.discount()
             state = newState
 
-        output = str(trial) + "  " + str(totalReward) + "  " + str(totalClicks) + "\n"
+        if calculateLoss:
+            loss = getAverageLoss(mdp, rl)
+            output = str(trial) + "  " + str(totalReward) + "  " + str(totalClicks) + "  " + loss + "\n"
+        else:
+            output = str(trial) + "  " + str(totalReward) + "  " + str(totalClicks) + "\n"
         if resultPath:
             f.write(output)
         if verbose:
             # print "Trial %d (totalReward = %s): %s" % (trial, totalReward, sequence)
             print output
+
         totalRewards.append(totalReward)
 
     if resultPath:
         f.close()
+
     return totalRewards
+
+def getAverageLoss(mdp, rl):
+    sumLoss = 0.
+    N = 0
+    states = mdp.computeStates()
+    for state in states:
+        actions = mdp.actions(state)
+        for action in actions:
+            Qopt = rl.getQ(state, action)
+            newState, __, reward = mdp.succAndProbReward(state, action)
+            Vopt = max(rl.getQ(newState, newAction) for newAction in mdp.actions(newState))
+            loss = 0.5 * (Qopt - (reward + mdp.discount() * Vopt))**2
+            sumLoss += loss
+            N += 1
+    return sumLoss / N
+
+
 
 # Performs Q-learning.  Read util.RLAlgorithm for more information.
 # actions: a function that takes a state and returns a list of actions.
@@ -254,25 +281,7 @@ class QLearningAlgorithm(RLAlgorithm):
         else:
             return
 
-        i, n, b, ad, pctr, imps, cost = state
-
-        # if i % 100000 == 0 or reward == 1:
-        #     print reward
+        # i, n, b, pctr, imps, cost = state
 
         for key, feature in self.featureExtractor(state, action):
-            # print(self.weights[key])
-            # print(self.getStepSize())
-            # print(Qopt)
-            # print(reward)
-            # print(self.discount)
-            # print(Vopt)
-            # print(feature)
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
-            # if i % 100000 == 0 or reward == 1:
-            #     print key, ":", self.weights[key]
-
-        # if i % 100000 == 0 or reward == 1:
-        #     print
-            # if i % 100000 == 0:
-                # print key, ":", self.weights[key]
-        # END_YOUR_CODE

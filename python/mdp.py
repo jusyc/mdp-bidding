@@ -6,7 +6,7 @@ class BiddingMDP(MDP):
   def __init__(self, N, B, ads, prices, clicks, pctrs, maxBidPrice):
     self.N = N
     self.B = B
-    self.ads = ads
+    # self.ads = ads
     self.prices = prices
     self.clicks = clicks
     self.pctrs = pctrs
@@ -14,11 +14,11 @@ class BiddingMDP(MDP):
 
   def startState(self):
     #STATE = (#bids so far, #bids remaining, budget remaining, ad features, pctr, #impressions, amount spent)
-    return (0, self.N, self.B, self.ads[0], self.pctrs[0], 0, 0)
+    return (0, self.N, self.B, self.pctrs[0], 0, 0)
 
 
   def actions(self, state):
-    i, n, b, ad, pctr, imps, cost = state
+    i, n, b, pctr, imps, cost = state
     if b < 300:
       return [0]
 
@@ -26,7 +26,7 @@ class BiddingMDP(MDP):
     #return [x for x in range(0, min(self.maxBidPrice, b) + 1, 10)]
 
   def succAndProbReward(self, state, action):
-    i, n, b, ad, pctr, imps, cost = state
+    i, n, b, pctr, imps, cost = state
 
     if (n == 1) or (b < self.maxBidPrice): # Reached end state    ...  or (b == 0)
       return []
@@ -44,11 +44,11 @@ class BiddingMDP(MDP):
     if action >= winprice: # Won last auction
       # if click != 0:
         # print i, ":", click
-      newState = (i+1, n-1, b-winprice, self.ads[i+1], self.pctrs[i+1], imps+1, cost+winprice)
+      newState = (i+1, n-1, b-winprice, self.pctrs[i+1], imps+1, cost+winprice)
       reward = click - 100 * winprice/float(self.B)
       return[(newState, 1., reward)]
     else: # Lost last auction
-      newState = (i+1, n-1, b, self.ads[i+1], self.pctrs[i+1], imps, cost)
+      newState = (i+1, n-1, b, self.pctrs[i+1], imps, cost)
       reward = 0#-click
       return[(newState, 1., reward)]
 
