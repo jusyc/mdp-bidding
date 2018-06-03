@@ -34,12 +34,12 @@ def basicFeatureExtractor(state, action):
   return features
 
 def main():
-  camp = campaigns[3]
-  resultPath = logPath + str(camp) + "/qlearning/v0-rewards.txt"
+  camp = campaigns[8]
+  resultPath = logPath + str(camp) + "/qlearning/v0-train.txt"
   mdp = makeMDP(camp=camp, c0=1./32, split="Train") #1323253
   explorationProb = 0.01
   qLearner = QLearningAlgorithm(mdp.actions, mdp.discount(), basicFeatureExtractor, explorationProb)
-  simulate(mdp, qLearner, numTrials=10, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath, calculateLoss=False)
+  simulate(mdp, qLearner, numTrials=50, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath, calculateLoss=False)
 
   qLearner.explorationProb = 0
   mdpTest = makeMDP(camp=camp, c0=1./32, split="Test")
