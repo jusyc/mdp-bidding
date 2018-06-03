@@ -66,7 +66,7 @@ def calculateBudget(c0, N, camp):
 
   return int(B)
 
-def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32):
+def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32, split=None):
   dataPath = outPath + camp + "/test/"
 
   pctr = np.load(dataPath + "pCTR.npy")
@@ -75,7 +75,23 @@ def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32):
   ads = np.load(dataPath + "features.npy")
 
   if N < 0:
-    N = len(clicks)
+    if split == "Train":
+      print(split)
+      N = len(clicks) * 8 / 10
+      pctr = pctr[:N]
+      prices = prices[:N]
+      clicks = clicks[:N]
+      ads = ads[:N]
+    elif split == "Test":
+      print(split)
+      offset = len(clicks) * 8 / 10
+      N = len(clicks) - offset
+      pctr = pctr[offset:]
+      prices = prices[offset:]
+      clicks = clicks[offset:]
+      ads = ads[offset:]
+    else:
+      N = len(clicks)
 
   if B < 0:
     B = calculateBudget(c0, N, camp)
@@ -83,6 +99,7 @@ def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32):
   print "N:", N
   print "B:", B
   print "nClicks:", np.sum(clicks)
+  print "a_max:", np.max(prices)
   #make MDP
   mdp = BiddingMDP(N=N, B=B, ads=ads, prices=prices, clicks=clicks, \
                   pctrs=pctr, maxBidPrice=maxBidPrice)

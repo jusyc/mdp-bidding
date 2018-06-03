@@ -16,6 +16,7 @@ def basicFeatureExtractor(state, action):
   features = []
   budget = math.floor(b/100000)*100000
   num = math.floor(n/1000)*1000
+  newPctr = math.floor(pctr*10) / 10
   # features.append((action, 1))
   # features.append((round(pctr, 2), 1))
   features.append((("action-pctr", action, getPctrBucket(pctr, 10)), 1) )
@@ -33,12 +34,20 @@ def basicFeatureExtractor(state, action):
   return features
 
 def main():
-  camp = campaigns[8]
+  camp = campaigns[3]
   resultPath = logPath + str(camp) + "/qlearning/v0-rewards.txt"
-  mdp = makeMDP(camp=camp, c0=1./32) #1323253
+  mdp = makeMDP(camp=camp, c0=1./32, split="Train") #1323253
   explorationProb = 0.01
   qLearner = QLearningAlgorithm(mdp.actions, mdp.discount(), basicFeatureExtractor, explorationProb)
-  simulate(mdp, qLearner, numTrials=1000, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath, calculateLoss=False)
+  simulate(mdp, qLearner, numTrials=10, maxIterations=1000000, verbose=True, sort=False, resultPath=resultPath, calculateLoss=False)
+
+  qLearner.explorationProb = 0
+  mdpTest = makeMDP(camp=camp, c0=1./32, split="Test")
+  testPath = logPath + str(camp) + "/qlearning/v0-test.txt"
+  simulate(mdpTest, qLearner, numTrials=1, maxIterations=10000000, verbose=True, sort=False, resultPath=testPath, calculateLoss=False)
+  # with open(logPath + str(camp) + "/qlearning/v0-weights.txt", 'w') as f:
+  #   for key in qLearner.weights:
+  #     f.write(str(key[0]) + " " + str(key[1]) + " " + str(key[2]) + " " + str(qLearner.weights[key]) + "\n")
 
 if __name__ == '__main__':
   main()
