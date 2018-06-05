@@ -3,7 +3,7 @@ from config import *
 import numpy as np
 
 class BiddingMDP(MDP):
-  def __init__(self, N, B, ads, prices, clicks, pctrs, maxBidPrice):
+  def __init__(self, N, B, ads, prices, clicks, pctrs, maxBidPrice, augReward):
     self.N = N
     self.B = B
     # self.ads = ads
@@ -11,6 +11,7 @@ class BiddingMDP(MDP):
     self.clicks = clicks
     self.pctrs = pctrs
     self.maxBidPrice = 300
+    self.augReward = augReward
 
   def startState(self):
     #STATE = (#bids so far, #bids remaining, budget remaining, ad features, pctr, #impressions, amount spent)
@@ -29,6 +30,7 @@ class BiddingMDP(MDP):
     i, n, b, pctr, imps, cost = state
 
     if (n == 1) or (b < self.maxBidPrice): # Reached end state    ...  or (b == 0)
+      print "Auctions remaining:", n
       return []
 
     click = self.clicks[i]
@@ -45,7 +47,9 @@ class BiddingMDP(MDP):
       # if click != 0:
         # print i, ":", click
       newState = (i+1, n-1, b-winprice, self.pctrs[i+1], imps+1, cost+winprice)
-      reward = click - 100 * winprice/float(self.B)
+      reward = click
+      if self.augReward:
+        reward -= 100 * winprice/float(self.B)
       return[(newState, 1., reward)]
     else: # Lost last auction
       newState = (i+1, n-1, b, self.pctrs[i+1], imps, cost)
@@ -66,7 +70,7 @@ def calculateBudget(c0, N, camp):
 
   return int(B)
 
-def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32, split=None):
+def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32, split=None, augReward=True):
   dataPath = outPath + camp + "/test/"
 
   pctr = np.load(dataPath + "pCTR.npy")
@@ -102,7 +106,7 @@ def makeMDP(camp, B=-1, N=-1, maxBidPrice=300, c0=1./32, split=None):
   print "a_max:", np.max(prices)
   #make MDP
   mdp = BiddingMDP(N=N, B=B, ads=ads, prices=prices, clicks=clicks, \
-                  pctrs=pctr, maxBidPrice=maxBidPrice)
+                  pctrs=pctr, maxBidPrice=maxBidPrice, augReward=augReward)
 
   return mdp
 

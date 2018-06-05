@@ -1,0 +1,2 @@
+Trial  Reward  #Clicks  UnseenWeights
+0  -93.9282599103  6  6

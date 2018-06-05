@@ -1,0 +1,2 @@
+Trial  Reward  #Clicks  NewWeights
+0  -93.9282599103  6  3018

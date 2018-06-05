@@ -1,5 +1,6 @@
 import collections, random
 import math
+import numpy as np
 
 ############################################################
 
@@ -147,7 +148,7 @@ class FixedRLAlgorithm(RLAlgorithm):
 # Each trial will run for at most |maxIterations|.
 # Return the list of rewards that we get for each trial.
 def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
-             sort=False, resultPath=None, calculateLoss=False):
+             sort=False, resultPath=None, calculateLoss=False, incorporateFeedback=True):
     # Return i in [0, ..., len(probs)-1] with probability probs[i].
     def sample(probs):
         target = random.random()
@@ -166,8 +167,8 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
             print("Trial " + " Reward " + " #Clicks" + " AvgLoss")
             f.write("Trial " + " Reward " + " #Clicks" + "AvgLoss\n")
         else:
-            print("Trial " + " Reward " + " #Clicks")
-            f.write("Trial " + " Reward " + " #Clicks\n")
+            print("Trial " + " Reward " + " #Clicks " + " UnseenWeights")
+            f.write("Trial " + " Reward " + " #Clicks " + " UnseenWeights\n")
 
     for trial in range(numTrials):
         state = mdp.startState()
@@ -175,12 +176,14 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
         totalDiscount = 1
         totalReward = 0
         totalClicks = 0
+        newWeights = 0
         for _ in range(maxIterations):
             action = rl.getAction(state)
             transitions = mdp.succAndProbReward(state, action)
             if sort: transitions = sorted(transitions)
             if len(transitions) == 0:
-                rl.incorporateFeedback(state, action, 0, None)
+                if incorporateFeedback:
+                    rl.incorporateFeedback(state, action, 0, None)
                 break
 
             # Choose a random transition
@@ -190,7 +193,10 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
             sequence.append(reward)
             sequence.append(newState)
 
-            rl.incorporateFeedback(state, action, reward, newState)
+            if incorporateFeedback:
+                nw = rl.incorporateFeedback(state, action, reward, newState)
+                if mdp.succAndProbReward(state, 300)[0][2] > 0:
+                    newWeights += nw
             if reward > 0:
                 totalClicks += 1
             totalReward += totalDiscount * reward
@@ -201,11 +207,10 @@ def simulate(mdp, rl, numTrials=10, maxIterations=1000, verbose=False,
             loss = getAverageLoss(mdp, rl)
             output = str(trial) + "  " + str(totalReward) + "  " + str(totalClicks) + "  " + loss + "\n"
         else:
-            output = str(trial) + "  " + str(totalReward) + "  " + str(totalClicks) + "\n"
+            output = str(trial) + "  " + str(totalReward) + "  " + str(totalClicks) + "  " + str(newWeights) + "\n"
         if resultPath:
             f.write(output)
         if verbose:
-            # print "Trial %d (totalReward = %s): %s" % (trial, totalReward, sequence)
             print output
 
         totalRewards.append(totalReward)
@@ -239,19 +244,54 @@ def getAverageLoss(mdp, rl):
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
 class QLearningAlgorithm(RLAlgorithm):
-    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2):
+    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2, nearestNeighbor=0, weights=None):
         self.actions = actions
         self.discount = discount
         self.featureExtractor = featureExtractor
         self.explorationProb = explorationProb
-        self.weights = collections.defaultdict(float)
+        self.nearestNeighbor = nearestNeighbor
+        if nearestNeighbor > 0:
+            self.weights = weights
+            keys = self.weights.keys()
+            # print(keys)
+            self.pctr0 = np.sort([float(key[1]) for key in keys if key[0]==0])
+            self.pctr300 = np.sort([float(key[1]) for key in keys if key[0]==300])
+            print(len(self.pctr0))
+            print(len(self.pctr300))
+        else:
+            self.weights = collections.defaultdict(float)
         self.numIters = 0
+
+    def getWeight(self, feature):
+        if self.nearestNeighbor == 0:
+            return self.weights[feature]
+        else:
+            nearestPctr = 0
+            pctr = float(feature[1])
+            if feature[0]==0:
+                nearest = np.searchsorted(self.pctr0, pctr, 'left')
+                if nearest > 0 and (nearest == len(self.pctr0) or math.fabs(pctr - self.pctr0[nearest-1]) < math.fabs(pctr - self.pctr0[nearest])):
+                    nearest -= 1
+                nearestPctr = self.pctr0[nearest]
+            else:
+                nearest = np.searchsorted(self.pctr300, pctr, 'left')
+                if nearest > 0 and (nearest == len(self.pctr300) or math.fabs(pctr - self.pctr300[nearest-1]) < math.fabs(pctr - self.pctr300[nearest])):
+                    nearest -= 1
+                nearestPctr = self.pctr300[nearest]
+
+            weight = self.weights[(feature[0], str(nearestPctr))]
+            print "currentKey:", feature
+            print "nearestPctr:", nearestPctr
+            print "weight:", weight
+            print
+            return weight
+
 
     # Return the Q function associated with the weights and features
     def getQ(self, state, action):
         score = 0
         for f, v in self.featureExtractor(state, action):
-            score += self.weights[f] * v
+            score += self.getWeight(f) * v
         return score
 
     # This algorithm will produce an action given a state.
@@ -279,9 +319,19 @@ class QLearningAlgorithm(RLAlgorithm):
         if(newState):
             Vopt = max(self.getQ(newState, newAction) for newAction in self.actions(newState)) #Vopt(s')
         else:
-            return
+            return 0
 
-        # i, n, b, pctr, imps, cost = state
-
+        newWeights = 0
         for key, feature in self.featureExtractor(state, action):
+            if self.weights[key] == 0:
+                newWeights += 1
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
+
+            # if key[0] == 0:
+            #     reverseKey = (300, key[1])
+            # else:
+            #     reverseKey = (0, key[1])
+
+            # self.weights[reverseKey] += self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
+
+        return newWeights
