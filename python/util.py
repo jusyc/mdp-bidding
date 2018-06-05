@@ -302,16 +302,23 @@ class QLearningAlgorithm(RLAlgorithm):
         if random.random() < self.explorationProb:
             return random.choice(self.actions(state))
         else:
+            # if self.nearestNeighbor > 0:
+            #     maxQ = float("-inf")
+            #     maxAction = 0
+            #     for action in self.actions(state):
+            #         q = self.getQ(state, action)
+            #         if q > maxQ:
+            #             maxQ = q
+            #             maxAction = action
+
+            #     return maxAction
+            # else:
             return max((self.getQ(state, action), action) for action in self.actions(state))[1]
 
     # Call this function to get the step size to update the weights.
     def getStepSize(self):
         return 1.0 / math.sqrt(self.numIters)
 
-    # We will call this function with (s, a, r, s'), which you should use to update |weights|.
-    # Note that if s is a terminal state, then s' will be None.  Remember to check for this.
-    # You should update the weights using self.getStepSize(); use
-    # self.getQ() to compute the current estimate of the parameters.
     def incorporateFeedback(self, state, action, reward, newState):
         # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
         Qopt = self.getQ(state, action) #Qopt(s, a, w)
@@ -326,12 +333,5 @@ class QLearningAlgorithm(RLAlgorithm):
             if self.weights[key] == 0:
                 newWeights += 1
             self.weights[key] -= self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
-
-            # if key[0] == 0:
-            #     reverseKey = (300, key[1])
-            # else:
-            #     reverseKey = (0, key[1])
-
-            # self.weights[reverseKey] += self.getStepSize() * (Qopt - (reward + self.discount * Vopt)) * feature
 
         return newWeights
