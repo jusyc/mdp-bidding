@@ -244,47 +244,19 @@ def getAverageLoss(mdp, rl):
 # explorationProb: the epsilon value indicating how frequently the policy
 # returns a random action
 class QLearningAlgorithm(RLAlgorithm):
-    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2, nearestNeighbor=0, weights=None):
+    def __init__(self, actions, discount, featureExtractor, explorationProb=0.2, weights=None):
         self.actions = actions
         self.discount = discount
         self.featureExtractor = featureExtractor
         self.explorationProb = explorationProb
-        self.nearestNeighbor = nearestNeighbor
-        if nearestNeighbor > 0:
-            self.weights = weights
-            keys = self.weights.keys()
-            # print(keys)
-            self.pctr0 = np.sort([float(key[1]) for key in keys if key[0]==0])
-            self.pctr300 = np.sort([float(key[1]) for key in keys if key[0]==300])
-            print(len(self.pctr0))
-            print(len(self.pctr300))
-        else:
+        if weights == None:
             self.weights = collections.defaultdict(float)
+        else:
+            self.weights = weights
         self.numIters = 0
 
     def getWeight(self, feature):
-        if self.nearestNeighbor == 0:
-            return self.weights[feature]
-        else:
-            nearestPctr = 0
-            pctr = float(feature[1])
-            if feature[0]==0:
-                nearest = np.searchsorted(self.pctr0, pctr, 'left')
-                if nearest > 0 and (nearest == len(self.pctr0) or math.fabs(pctr - self.pctr0[nearest-1]) < math.fabs(pctr - self.pctr0[nearest])):
-                    nearest -= 1
-                nearestPctr = self.pctr0[nearest]
-            else:
-                nearest = np.searchsorted(self.pctr300, pctr, 'left')
-                if nearest > 0 and (nearest == len(self.pctr300) or math.fabs(pctr - self.pctr300[nearest-1]) < math.fabs(pctr - self.pctr300[nearest])):
-                    nearest -= 1
-                nearestPctr = self.pctr300[nearest]
-
-            weight = self.weights[(feature[0], str(nearestPctr))]
-            print "currentKey:", feature
-            print "nearestPctr:", nearestPctr
-            print "weight:", weight
-            print
-            return weight
+        return self.weights[feature]
 
 
     # Return the Q function associated with the weights and features
@@ -302,17 +274,6 @@ class QLearningAlgorithm(RLAlgorithm):
         if random.random() < self.explorationProb:
             return random.choice(self.actions(state))
         else:
-            # if self.nearestNeighbor > 0:
-            #     maxQ = float("-inf")
-            #     maxAction = 0
-            #     for action in self.actions(state):
-            #         q = self.getQ(state, action)
-            #         if q > maxQ:
-            #             maxQ = q
-            #             maxAction = action
-
-            #     return maxAction
-            # else:
             return max((self.getQ(state, action), action) for action in self.actions(state))[1]
 
     # Call this function to get the step size to update the weights.

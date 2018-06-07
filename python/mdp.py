@@ -20,11 +20,11 @@ class BiddingMDP(MDP):
 
   def actions(self, state):
     i, n, b, pctr, imps, cost = state
-    if b < 300:
+    if b < self.maxBidPrice:
       return [0]
 
-    return [0, self.maxBidPrice]
-    #return [x for x in range(0, min(self.maxBidPrice, b) + 1, 10)]
+    # return [0, 50, 100, 150, 200, 250, self.maxBidPrice]
+    return [x for x in range(0, min(self.maxBidPrice, b) + 1, 10)]
 
   def succAndProbReward(self, state, action):
     i, n, b, pctr, imps, cost = state
